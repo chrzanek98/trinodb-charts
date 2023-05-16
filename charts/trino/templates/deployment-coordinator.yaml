@@ -37,6 +37,14 @@ spec:
         - name: schemas-volume
           configMap:
             name: schemas-volume-coordinator
+        {{- range .Values.extraVolumes }}
+        - name: {{ .name }}
+          csi:
+            driver: {{ .csi.driver }}
+            readOnly: {{ .csi.readOnly }}
+            volumeAttributes:
+              secretProviderClass: {{ .csi.volumeAttributes.secretProviderClass }}
+        {{- end }}
         {{- if .Values.accessControl }}{{- if eq .Values.accessControl.type "configmap" }}
         - name: access-control-volume
           configMap:
@@ -64,6 +72,10 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             {{- toYaml .Values.env | nindent 12 }}
+            {{- range .Values.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
           volumeMounts:
             - mountPath: {{ .Values.server.config.path }}
               name: config-volume
@@ -71,6 +83,11 @@ spec:
               name: catalog-volume
             - mountPath: {{ .Values.kafka.mountPath }}
               name: schemas-volume
+            {{- range .Values.extraVolumeMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              readOnly: {{ .readOnly }}
+            {{- end }}
             {{- if .Values.accessControl }}{{- if eq .Values.accessControl.type "configmap" }}
             - mountPath: {{ .Values.server.config.path }}/access-control
               name: access-control-volume
